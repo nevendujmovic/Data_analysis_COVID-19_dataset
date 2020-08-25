@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/Users/Test/Desktop/Data_analysis/covid19data.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="4930"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,9:mainCovidData"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="CovidData" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="65"/><column index="2" value="89"/><column index="3" value="74"/><column index="4" value="73"/><column index="5" value="84"/><column index="6" value="80"/><column index="7" value="92"/><column index="8" value="88"/><column index="9" value="161"/><column index="10" value="157"/><column index="11" value="169"/><column index="12" value="165"/><column index="13" value="77"/><column index="14" value="81"/><column index="15" value="180"/><column index="16" value="176"/><column index="17" value="149"/><column index="18" value="248"/><column index="19" value="110"/><column index="20" value="95"/><column index="21" value="82"/><column index="22" value="119"/><column index="23" value="76"/><column index="24" value="132"/><column index="25" value="86"/><column index="26" value="105"/><column index="27" value="105"/><column index="28" value="110"/><column index="29" value="122"/><column index="30" value="160"/><column index="31" value="144"/><column index="32" value="113"/><column index="34" value="154"/><column index="35" value="197"/><column index="36" value="110"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="owid-covid-data" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="65"/><column index="2" value="89"/><column index="3" value="74"/><column index="4" value="73"/><column index="5" value="84"/><column index="6" value="80"/><column index="7" value="92"/><column index="8" value="88"/><column index="9" value="161"/><column index="10" value="157"/><column index="11" value="169"/><column index="12" value="165"/><column index="13" value="77"/><column index="14" value="81"/><column index="15" value="180"/><column index="16" value="176"/><column index="17" value="149"/><column index="18" value="248"/><column index="19" value="110"/><column index="20" value="95"/><column index="21" value="82"/><column index="22" value="119"/><column index="23" value="76"/><column index="24" value="132"/><column index="25" value="86"/><column index="26" value="105"/><column index="27" value="105"/><column index="28" value="110"/><column index="29" value="122"/><column index="30" value="160"/><column index="31" value="144"/><column index="32" value="113"/><column index="34" value="154"/><column index="35" value="197"/><column index="36" value="110"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1">/* STEP 1: SET YOUR ANALYTICS GOAL 
+
+	Find the effectiveness of testing on Covid-19 by 
+	comparing the number of tests for a single day and the number of new cases. 
+	High efficiency in testing could mean that there is not enough testing, 
+	ie that there is a significantly higher number of infected people in the 
+	population than was detected.
+*/
+
+/* STEP 2: COLLECT DATA 
+
+	Download data in .CSV file from the web:
+	https://ourworldindata.org/coronavirus-testing
+	Load the data from the comma-separated values (CSV) text file 
+	to the &quot;covid_data&quot; variable.
+*/
+
+
+/* STEP 3: PREPARE DATA */
+
+SELECT * FROM CovidData;
+
+/* We identified the following three columns that are needed for our analysis.
+
+	The &quot;location&quot; column contains information about the Country,
+	the &quot;date&quot; column is important to have a time dimension,
+	the &quot;new_tests&quot; counts the number of tests done on a specific date,
+	the &quot;new_cases&quot; counts a number of reported Covid-19 positive cases.
+*/
+SELECT location, date, new_tests, new_cases FROM CovidData;
+
+/*  Let's do a simple check of the quality of data concerning number of records 
+	and the number of missing values.
+
+	Check the number of records for each column.
+*/
+SELECT COUNT(*) as location_NULL FROM CovidData
+WHERE location IS NULL;
+-- no NULL entry found
+
+SELECT COUNT(*) as date_NULL FROM CovidData
+WHERE date IS NULL;
+-- no NULL entry found
+
+SELECT COUNT(*) as new_tests_NULL FROM CovidData
+WHERE new_tests IS NULL;
+-- there are 25588 rows where test data for the specific date is missing
+-- this have to be removed and we will add it to the WHERE clause: 
+-- new_tests IS NOT NULL
+
+SELECT COUNT(*) as new_cases_NULL FROM CovidData
+WHERE new_cases IS NULL;
+-- there are 352 rows where test data for the specific date is missing
+-- this have to be removed and we will add it to the WHERE clause: 
+-- new_cases IS NOT NULL
+
+/* Count the number records when NULL values are removed. */
+SELECT Count(*) FROM CovidData
+WHERE new_tests IS NOT NULL AND new_cases IS NOT NULL;
+
+/* Count the number records when NULL values and &quot;new_cases&quot; &lt; &quot;new_tests&quot; values are removed. */
+SELECT Count(*) FROM CovidData
+WHERE new_tests IS NOT NULL AND new_cases IS NOT NULL AND new_cases &lt; new_tests;
+
+/* Count the number records when NULL values, &quot;new_cases&quot; &lt; &quot;new_tests&quot; values are removed
+   and negative values are removed. */
+SELECT Count(*) FROM CovidData
+WHERE new_tests IS NOT NULL AND new_cases IS NOT NULL AND new_cases &lt; new_tests 
+      AND new_tests &gt; 0 AND new_cases &gt;= 0
+
+/* list of countries */
+SELECT DISTINCT location AS Country FROM CovidData ORDER BY location;
+
+/* STEP 4: ANALYZE DATA */
+
+/* Now it is time to fulfill the purpose of our analysis and 
+   list average percentages grouped by countries. */
+SELECT location AS Country, AVG(new_cases*1.0 / new_tests) * 100 AS [Average percentage of detection] FROM CovidData
+WHERE new_tests IS NOT NULL AND new_cases IS NOT NULL AND new_cases &lt; new_tests AND new_tests &gt; 0 AND new_cases &gt;= 0
+GROUP BY location
+ORDER BY [Average percentage of detection] DESC;
+
+
+/* We can also give a time dimension to our query by providing date values to analyze data only in the specific period. */
+SELECT location AS Country, ROUND((AVG(new_cases*1.0 / new_tests) * 100), 4) AS [Average percentage of detection] FROM CovidData
+WHERE new_tests IS NOT NULL AND new_cases IS NOT NULL AND new_cases &lt; new_tests AND new_tests &gt; 0 AND new_cases &gt;= 0
+      AND DATE(date) BETWEEN DATE('2020-07-01') AND DATE('2020-08-01')
+GROUP BY location
+ORDER BY [Average percentage of detection] DESC;
+
+/*
+Note that the BETWEEN operator is inclusive. 
+It returns true when the test_expression is less than or equal to high_expression 
+and greater than or equal to the value of low_expression:
+test_expression &gt;= low_expression AND test_expression &lt;= high_expression
+*/
+
+
+
+
+
+
+
+
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
